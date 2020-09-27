@@ -1,13 +1,18 @@
 import Schema from "async-validator";
-import type { Rules, ErrorList, ValidateOption } from "async-validator";
+import type {
+  RuleType,
+  Rules,
+  RuleItem,
+  ErrorList,
+  ValidateOption,
+} from "async-validator";
 
-type Values<T = any> = { [key: string]: T };
+type Values = { [key: string]: any };
 type ValidationError = { errors: ErrorList };
-type RulesRef = { current: Rules };
-type ResolverSchema = Rules | RulesRef;
+type ResolverSchema = Rules | { current?: Rules };
 
 const convertErrors = (errors: ErrorList) =>
-  errors.reduce<Values<string>>(
+  errors.reduce<Values>(
     (a, { field, message }) => ({ [field]: message, ...a }),
     {}
   );
@@ -16,10 +21,10 @@ export interface ResolverConfig extends ValidateOption {
   useRef?: boolean;
 }
 
-const resolver = <StoreValues extends Values = Values>(
+const resolver = (
   schema: ResolverSchema,
-  { useRef, ...config }: ResolverConfig
-) => (values: StoreValues) => {
+  { useRef, ...config }: ResolverConfig = {}
+) => (values: Values) => {
   const validatorSchema = (useRef ? schema.current : schema) as Rules;
   const validator = new Schema(validatorSchema);
   return validator
@@ -29,9 +34,10 @@ const resolver = <StoreValues extends Values = Values>(
       errors: {},
     }))
     .catch(({ errors }: ValidationError) => ({
-      values,
+      values: {},
       errors: convertErrors(errors),
     }));
 };
 
+export type { RuleType, Rules, RuleItem };
 export default resolver;
