@@ -1,30 +1,36 @@
 import Schema from "async-validator";
-import type {
+import type { Resolver } from "react-hook-form";
+import type { Rules, ErrorList, ValidateOption } from "async-validator";
+
+export type Values = { [key: string]: any };
+export type ValidationError = { errors: ErrorList };
+export type ResolverSchema = Rules | { current?: Rules };
+
+export type {
   RuleType,
   Rules,
   RuleItem,
-  ErrorList,
   ValidateOption,
+  ValidateError,
+  ValidateSource,
+  ErrorList,
+  FieldErrorList,
 } from "async-validator";
 
-type Values = { [key: string]: any };
-type ValidationError = { errors: ErrorList };
-type ResolverSchema = Rules | { current?: Rules };
-
-const convertErrors = (errors: ErrorList) =>
-  errors.reduce<Values>(
+const convertErrors = <T extends Values = Values>(errors: ErrorList) =>
+  errors.reduce<T>(
     (a, { field, message }) => ({ [field]: message, ...a }),
-    {}
+    {} as T
   );
 
 export interface ResolverConfig extends ValidateOption {
   useRef?: boolean;
 }
 
-const resolver = (
+const resolver = <T extends Values = Values>(
   schema: ResolverSchema,
   { useRef, ...config }: ResolverConfig = {}
-) => (values: Values) => {
+): Resolver<T> => (values) => {
   const validatorSchema = (useRef ? schema.current : schema) as Rules;
   const validator = new Schema(validatorSchema);
   return validator
@@ -39,5 +45,4 @@ const resolver = (
     }));
 };
 
-export type { RuleType, Rules, RuleItem };
 export default resolver;
